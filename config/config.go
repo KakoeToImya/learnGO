@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -18,7 +20,7 @@ type Config struct {
 }
 
 type Database struct {
-	Host     string `env:"DB_HOST" env-default:"127.0.0.1:"`
+	Host     string `env:"DB_HOST" env-default:"127.0.0.1"`
 	Port     string `env:"DB_PORT" env-required:"true"`
 	User     string `env:"DB_USER" env-required:"true"`
 	Password string `env:"DB_PASSWORD" env-required:"true"`
@@ -29,12 +31,23 @@ type Redis struct {
 	Password string `env:"REDIS_PASSWORD" env-required:"true"`
 }
 
+func (c *Config) DatabaseURL() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		c.DB.User, c.DB.Password, c.DB.Host, c.DB.Port, c.DB.Name)
+}
 func MustLoad() *Config {
 	var cfg Config
 
-	err := cleanenv.ReadConfig(".env", &cfg)
-	if err != nil {
-		log.Fatalf("Критическая ошибка: не удалось загрузить конфиг: %v", err)
+	if _, err := os.Stat(".env"); err == nil {
+		if err := cleanenv.ReadConfig(".env", &cfg); err != nil {
+			log.Fatalf("Критическая ошибка при чтении .env файла: %v", err)
+		}
+	} else if os.IsNotExist(err) {
+		if err := cleanenv.ReadEnv(&cfg); err != nil {
+			log.Fatalf("Критическая ошибка при чтении переменных окружения: %v", err)
+		}
+	} else {
+		log.Fatalf("Ошибка при проверке наличия .env файла: %v", err)
 	}
 
 	return &cfg

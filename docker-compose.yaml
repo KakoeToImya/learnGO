@@ -40,6 +40,8 @@ services:
       redis:
         condition: service_healthy
     environment:
+      APP_ENV: ${APP_ENV}
+      LOG_LEVEL: ${LOG_LEVEL}
       DB_HOST: db          
       DB_PORT: 5432
       DB_USER: ${DB_USER}
@@ -49,6 +51,6 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       APP_PORT: ${APP_PORT}
       JWT_SECRET: ${JWT_SECRET}
-
+  
 volumes:
   postgres-data:  
